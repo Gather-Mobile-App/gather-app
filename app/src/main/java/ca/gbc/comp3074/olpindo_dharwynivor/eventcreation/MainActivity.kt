@@ -28,7 +28,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             EventcreationTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    var currentScreen by remember { mutableIntStateOf(3) }
+                    var currentScreen by remember { mutableIntStateOf(1) }
 
                     // Screens we came from, so the phone's Back button can return to them
                     val history = remember { mutableStateListOf<Int>() }
