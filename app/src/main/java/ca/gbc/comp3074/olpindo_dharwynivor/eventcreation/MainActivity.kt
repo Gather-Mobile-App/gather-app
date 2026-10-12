@@ -11,13 +11,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.EventcreationTheme
-import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.screens.Screen8EventCreation
-import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.screens.Screen9Success
+import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.screens.Screen1Home
+import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.screens.Screen2MainNavAnon
+import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.screens.Screen3MainNavLoggedIn
 import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.screens.Screen4UserDashboard
 import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.screens.Screen5UserAvailabilities
-import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.screens.Screen1Home
 import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.screens.Screen6NewAvailability
 import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.screens.Screen7EventAvailabilities
+import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.screens.Screen8EventCreation
+import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.screens.Screen9Success
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,7 +48,19 @@ class MainActivity : ComponentActivity() {
                         1 -> Screen1Home(
                             modifier = Modifier.padding(innerPadding),
                             onGoClicked = { goTo(6) },
-                            onLogInClicked = { goTo(4) }
+                            onLogInClicked = { goTo(4) },
+                            onNavClicked = { goTo(2) }
+                        )
+
+                        2 -> Screen2MainNavAnon(
+                            modifier = Modifier.padding(innerPadding),
+                            onNavClicked = { goTo(3) }
+                        )
+
+                        3 -> Screen3MainNavLoggedIn(
+                            modifier = Modifier.padding(innerPadding),
+                            onAvailabilityClicked = { goTo(5) },
+                            onDashboardClicked = { goTo(4) }
                         )
 
                         4 -> Screen4UserDashboard(
@@ -74,6 +88,7 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.padding(innerPadding),
                             onSubmitClicked = { goTo(9) },
                         )
+
                         9 -> Screen9Success(
                             modifier = Modifier.padding(innerPadding),
                             onViewEventsClicked = { goTo(7) },
