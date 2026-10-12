@@ -19,7 +19,8 @@ fun Screen1Home(
     onGoClicked: () -> Unit = {},
     onBrowseEventsClicked: () -> Unit = {},
     onSignUpClicked: () -> Unit = {},
-    onLogInClicked: () -> Unit = {}
+    onLogInClicked: () -> Unit = {},
+    onNavClicked: () -> Unit = {}
 ) {
     var eventCode by remember { mutableStateOf("") }
 
@@ -36,7 +37,7 @@ fun Screen1Home(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("GATHER", fontSize = 24.sp, style = MaterialTheme.typography.titleLarge)
-            IconButton(onClick = {}) {
+            IconButton(onClick = onNavClicked) {
                 Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu")
             }
         }
@@ -45,7 +46,7 @@ fun Screen1Home(
             "HOME SCREEN",
             fontSize = 12.sp,
             color = Color.Gray,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
 
         Spacer(modifier = Modifier.weight(1f))

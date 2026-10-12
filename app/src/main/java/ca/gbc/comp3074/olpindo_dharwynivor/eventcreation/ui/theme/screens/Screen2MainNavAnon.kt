@@ -21,7 +21,8 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun Screen2MainNavAnon(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavClicked: () -> Unit = {}
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         Row(
@@ -40,7 +41,7 @@ fun Screen2MainNavAnon(
                 color = Color.Black
             )
 
-            IconButton(onClick = { /* NEED ACTION - TEMP PROTOTYPE - LATER WE WILL TOGGLE NAV */ }) {
+            IconButton(onClick = onNavClicked) {
                 Icon(
                     imageVector = Icons.Default.Menu,
                     contentDescription = "Toggle Main Nav Menu",

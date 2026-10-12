@@ -21,7 +21,9 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun Screen3MainNavLoggedIn(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onAvailabilityClicked: () -> Unit = {},
+    onDashboardClicked: () -> Unit = {},
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         Row(
@@ -79,14 +81,14 @@ fun Screen3MainNavLoggedIn(
                 }
 
                 Button(
-                    onClick = { /* NEED ACTION - TEMP PROTOTYPE */ },
+                    onClick = onDashboardClicked,
                     modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
                 ) {
                     Text("My Events", fontSize = 16.sp)
                 }
 
                 Button(
-                    onClick = { /* NEED ACTION - TEMP PROTOTYPE */ },
+                    onClick = onAvailabilityClicked,
                     modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
                 ) {
                     Text("My Time To Gather", fontSize = 16.sp)

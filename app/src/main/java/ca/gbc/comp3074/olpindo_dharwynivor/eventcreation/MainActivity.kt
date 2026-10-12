@@ -48,15 +48,19 @@ class MainActivity : ComponentActivity() {
                         1 -> Screen1Home(
                             modifier = Modifier.padding(innerPadding),
                             onGoClicked = { goTo(6) },
-                            onLogInClicked = { goTo(4) }
+                            onLogInClicked = { goTo(4) },
+                            onNavClicked = { goTo(2) }
                         )
 
                         2 -> Screen2MainNavAnon(
-                            modifier = Modifier.padding(innerPadding)
+                            modifier = Modifier.padding(innerPadding),
+                            onNavClicked = { goTo(3) }
                         )
 
                         3 -> Screen3MainNavLoggedIn(
-                            modifier = Modifier.padding(innerPadding)
+                            modifier = Modifier.padding(innerPadding),
+                            onAvailabilityClicked = { goTo(5) },
+                            onDashboardClicked = { goTo(4) }
                         )
 
                         4 -> Screen4UserDashboard(
