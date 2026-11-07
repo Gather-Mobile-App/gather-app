@@ -5,9 +5,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.EventcreationTheme
@@ -20,14 +23,24 @@ import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.screens.Screen
 import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.screens.Screen7EventAvailabilities
 import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.screens.Screen8EventCreation
 import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.screens.Screen9Success
+import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.viewmodel.ParticipantViewModel
 
 class MainActivity : ComponentActivity() {
+    private val viewModel: ParticipantViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             EventcreationTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                val snackbarHostState = remember { SnackbarHostState() }
+                val notification = viewModel.latestNotification
+                LaunchedEffect(notification) {
+                    notification?.let {
+                        snackbarHostState.showSnackbar(it)
+                        viewModel.clearNotification()
+                    }
+                }
+                Scaffold(snackbarHost = {SnackbarHost(snackbarHostState)}, modifier = Modifier.fillMaxSize()) { innerPadding ->
                     var currentScreen by remember { mutableIntStateOf(1) }
 
                     // Screens we came from, so the phone's Back button can return to them
@@ -47,7 +60,10 @@ class MainActivity : ComponentActivity() {
                     when (currentScreen) {
                         1 -> Screen1Home(
                             modifier = Modifier.padding(innerPadding),
-                            onGoClicked = { goTo(6) },
+                            onGoClicked = {
+                                viewModel.triggerNotification("Event code validated!")
+                                goTo(6)
+                            },
                             onLogInClicked = { goTo(4) },
                             onNavClicked = { goTo(2) }
                         )
@@ -75,7 +91,13 @@ class MainActivity : ComponentActivity() {
 
                         6 -> Screen6NewAvailability(
                             modifier = Modifier.padding(innerPadding),
-                            onSaveClicked = { goTo(5) },
+                            onSaveClicked = {
+                                viewModel.submitAvailability("My Custom Schedule")
+                                goTo(5)
+                            },
+                            onImportClicked = {
+                                viewModel.importIcsCalendar()
+                            },
                             onBackClicked = { goTo(5) }
                         )
 
@@ -86,7 +108,10 @@ class MainActivity : ComponentActivity() {
 
                         8 -> Screen8EventCreation(
                             modifier = Modifier.padding(innerPadding),
-                            onSubmitClicked = { goTo(9) },
+                            onSubmitClicked = {
+                                viewModel.triggerNotification("Event successfully created!")
+                                goTo(9)
+                            },
                         )
 
                         9 -> Screen9Success(
