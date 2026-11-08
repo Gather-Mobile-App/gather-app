@@ -3,9 +3,11 @@ package ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
@@ -18,53 +20,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.data.GatherRepository
+import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.logic.OverlapCalculator
+import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.logic.TimeUtils
 
-// ---- Sample data for the prototype ----
 private val FitGreen = Color(0xFFD5E8D4)
 private val FitGreenBorder = Color(0xFF82B366)
 
-private data class Slot(val time: String, val fits: Boolean)
-private data class Participant(val name: String, val slots: List<Slot>)
-private data class DateOption(val label: String, val stats: String, val participants: List<Participant>)
-
-private val sampleOptions = listOf(
-    DateOption(
-        "Sat, Oct 24 · 18:00 - 22:00",
-        "RSVPs: 3   ·   Fit this option: 3\nBest time: 18:00 - 20:00 (3 of 3 free)",
-        listOf(
-            Participant("PARTICIPANT 1", listOf(Slot("15:00 - 22:00", true))),
-            Participant("PARTICIPANT 2", listOf(Slot("08:00 - 10:00", false), Slot("14:00 - 23:59", true))),
-            Participant("PARTICIPANT 3", listOf(Slot("12:00 - 12:30", false), Slot("15:00 - 20:00", true)))
-        )
-    ),
-    DateOption(
-        "Sun, Oct 25 · 13:00 - 17:00",
-        "RSVPs: 3   ·   Fit this option: 2\nBest time: 14:00 - 16:00 (2 of 3 free)",
-        listOf(
-            Participant("PARTICIPANT 1", listOf(Slot("14:00 - 16:00", true))),
-            Participant("PARTICIPANT 2", listOf(Slot("No free time on this date", false))),
-            Participant("PARTICIPANT 3", listOf(Slot("13:00 - 17:00", true)))
-        )
-    ),
-    DateOption(
-        "Mon, Oct 26 · 09:00 - 12:00",
-        "RSVPs: 3   ·   Fit this option: 1\nBest time: 09:00 - 12:00 (1 of 3 free)",
-        listOf(
-            Participant("PARTICIPANT 1", listOf(Slot("No free time on this date", false))),
-            Participant("PARTICIPANT 2", listOf(Slot("09:00 - 12:00", true))),
-            Participant("PARTICIPANT 3", listOf(Slot("18:00 - 21:00", false)))
-        )
-    )
-)
-
-// Screen 7 - VIEW EVENT USER AVAILABILITIES (UI prototype, sample data only)
+// Screen 7 - VIEW EVENT USER AVAILABILITIES (FR-02, FR-04)
+// Shows the selected event's RSVPs, the best time for each date option,
+// and whether the minimum number of people (quorum) has been reached.
 @Composable
 fun Screen7EventAvailabilities(
     modifier: Modifier = Modifier,
     onBackClicked: () -> Unit = {}
 ) {
+    val event = GatherRepository.selectedEvent()
     var selected by remember { mutableIntStateOf(0) }
-    val option = sampleOptions[selected]
+
+    // Work everything out before drawing the list
+    val rsvps = if (event == null) emptyList() else GatherRepository.rsvpsFor(event.id)
+    val results = event?.dateOptions?.map { OverlapCalculator.calculate(it, rsvps) } ?: emptyList()
+    val bestOptionIndex = results.indices.maxByOrNull { results[it].bestCount } ?: 0
+    val sel = if (results.isEmpty()) 0 else selected.coerceIn(0, results.lastIndex)
 
     LazyColumn(
         modifier = modifier.fillMaxSize().padding(16.dp),
@@ -93,7 +71,22 @@ fun Screen7EventAvailabilities(
             )
         }
 
-        item { Text("EVENT TITLE", fontSize = 22.sp, fontWeight = FontWeight.Bold) }
+        if (event == null || event.dateOptions.isEmpty()) {
+            item { Text("No event selected. Open an event from the Dashboard.") }
+            item {
+                Button(onClick = onBackClicked, modifier = Modifier.fillMaxWidth()) {
+                    Text("BACK TO DASHBOARD")
+                }
+            }
+            return@LazyColumn
+        }
+
+        val option = event.dateOptions[sel]
+        val result = results[sel]
+        val windowStart = TimeUtils.toMinutes(option.startTime) ?: 0
+        val windowEnd = TimeUtils.toMinutes(option.endTime) ?: 0
+
+        item { Text(event.title.uppercase(), fontSize = 22.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) }
         item { Text("Share your event!\nThis event's RSVP code is:", textAlign = TextAlign.Center) }
         item {
             Box(
@@ -103,55 +96,97 @@ fun Screen7EventAvailabilities(
                     .border(2.dp, Color.Black, RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("A1A1A1", fontSize = 28.sp, style = MaterialTheme.typography.headlineMedium)
+                Text(event.rsvpCode, fontSize = 28.sp, style = MaterialTheme.typography.headlineMedium)
             }
         }
 
-        // DATE OPTION 1 / 2 / 3
+        // DATE OPTION buttons (★ = option with the most people free)
         item {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                sampleOptions.indices.forEach { i ->
-                    val isSelected = i == selected
+                event.dateOptions.indices.forEach { i ->
+                    val isSelected = i == sel
+                    val star = if (i == bestOptionIndex && results[i].bestCount > 0) " ★" else ""
                     Box(
                         modifier = Modifier
-                            .weight(1f)
+                            .width(100.dp)
                             .background(if (isSelected) FitGreen else Color.White, RoundedCornerShape(10.dp))
                             .border(1.dp, if (isSelected) FitGreenBorder else Color.Black, RoundedCornerShape(10.dp))
                             .clickable { selected = i }
                             .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("DATE\nOPTION ${i + 1}", textAlign = TextAlign.Center, fontSize = 13.sp)
+                        Text("DATE\nOPTION ${i + 1}$star", textAlign = TextAlign.Center, fontSize = 13.sp)
                     }
                 }
             }
         }
 
-        item { Text(option.label, fontWeight = FontWeight.Bold) }
-
-        // Stats readout
         item {
             Text(
-                option.stats,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
-                    .padding(12.dp)
+                "${TimeUtils.dateLabel(option.date)} · ${option.startTime} - ${option.endTime}",
+                fontWeight = FontWeight.Bold
             )
         }
 
-        // One card per participant. Green rows = fit the selected date option.
-        items(option.participants) { participant ->
+        // Stats readout (FR-02) + attendance rules (FR-04)
+        item {
+            val bestText = if (result.bestCount == 0) {
+                "nobody is free in this window yet"
+            } else {
+                result.bestWindows.joinToString(", ") {
+                    "${TimeUtils.fromMinutes(it.first)} - ${TimeUtils.fromMinutes(it.second)}"
+                } + " (${result.bestCount} of ${result.totalRsvps} free)"
+            }
+            val needed = event.minAttendees - result.bestCount
+            val quorumText = if (needed <= 0) {
+                "Quorum met ✓ (needs ${event.minAttendees})"
+            } else {
+                "Needs $needed more to reach the minimum of ${event.minAttendees}"
+            }
+            val capText = when {
+                event.maxAttendees == 0 -> "No attendee limit"
+                rsvps.size >= event.maxAttendees -> "Full (${rsvps.size} of ${event.maxAttendees})"
+                else -> "Spots left: ${event.maxAttendees - rsvps.size} of ${event.maxAttendees}"
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text("RSVPs: ${result.totalRsvps}")
+                Text("Free for the whole time: ${result.fullyFree}  ·  Part of it: ${result.partlyFree}")
+                Text("Best time: $bestText", fontWeight = FontWeight.Bold)
+                Text(quorumText, color = if (needed <= 0) FitGreenBorder else Color.Red, fontWeight = FontWeight.Bold)
+                Text(capText)
+            }
+        }
+
+        if (rsvps.isEmpty()) {
+            item { Text("No RSVPs yet. Share the code so people can respond.", color = Color.Gray) }
+        }
+
+        // One card per participant. Green rows = free during the selected date option.
+        items(rsvps) { rsvp ->
+            val blocks = rsvp.blocks.filter { it.date == option.date }.sortedBy { it.startTime }
             Column(modifier = Modifier.fillMaxWidth()) {
-                Screen7Row(participant.name, background = Color(0xFFF3F3F3), borderColor = Color.Gray)
-                participant.slots.forEach { slot ->
+                Screen7Row(rsvp.name.uppercase(), background = Color(0xFFF3F3F3), borderColor = Color.Gray)
+                if (blocks.isEmpty()) {
+                    Screen7Row("No free time on this date", background = Color.White, borderColor = Color.Gray)
+                }
+                blocks.forEach { block ->
+                    val s = TimeUtils.toMinutes(block.startTime) ?: 0
+                    val e = TimeUtils.toMinutes(block.endTime) ?: 0
+                    val fits = s < windowEnd && windowStart < e
                     Screen7Row(
-                        slot.time,
-                        background = if (slot.fits) FitGreen else Color.White,
-                        borderColor = if (slot.fits) FitGreenBorder else Color.Gray
+                        "${block.startTime} - ${block.endTime}",
+                        background = if (fits) FitGreen else Color.White,
+                        borderColor = if (fits) FitGreenBorder else Color.Gray
                     )
                 }
             }
