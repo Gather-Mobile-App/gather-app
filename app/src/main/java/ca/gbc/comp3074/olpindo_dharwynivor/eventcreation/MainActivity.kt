@@ -40,32 +40,26 @@ class MainActivity : ComponentActivity() {
                         viewModel.clearNotification()
                     }
                 }
-                Scaffold(snackbarHost = {SnackbarHost(snackbarHostState)}, modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }, modifier = Modifier.fillMaxSize()) { innerPadding ->
                     var currentScreen by remember { mutableIntStateOf(1) }
 
-                    // Screens we came from, so the phone's Back button can return to them
                     val history = remember { mutableStateListOf<Int>() }
 
-                    // Use this to open a screen (remembers where we were)
                     fun goTo(screen: Int) {
                         history.add(currentScreen)
                         currentScreen = screen
                     }
 
-                    // Phone Back button / gesture: go to the previous screen
                     BackHandler(enabled = history.isNotEmpty()) {
                         currentScreen = history.removeAt(history.lastIndex)
                     }
 
                     when (currentScreen) {
                         1 -> Screen1Home(
-                            modifier = Modifier.padding(innerPadding),
-                            onGoClicked = {
-                                viewModel.triggerNotification("Event code validated!")
-                                goTo(6)
-                            },
-                            onLogInClicked = { goTo(4) },
-                            onNavClicked = { goTo(2) }
+                            onGoClicked = { goTo(6) },
+                            onBrowseEventsClicked = { goTo(4) },
+                            onSignUpClicked = { goTo(4) },
+                            onLogInClicked = { goTo(4) }
                         )
 
                         2 -> Screen2MainNavAnon(
@@ -85,14 +79,15 @@ class MainActivity : ComponentActivity() {
                         )
 
                         5 -> Screen5UserAvailabilities(
+                            schedules = viewModel.savedSchedules.value,
                             onNewAvailabilityClicked = { goTo(6) },
                             onDashboardClicked = { goTo(4) }
                         )
 
                         6 -> Screen6NewAvailability(
                             modifier = Modifier.padding(innerPadding),
-                            onSaveClicked = {
-                                viewModel.submitAvailability("My Custom Schedule")
+                            onSaveClicked = { title, slots ->
+                                viewModel.submitAvailability(title, slots)
                                 goTo(5)
                             },
                             onImportClicked = {

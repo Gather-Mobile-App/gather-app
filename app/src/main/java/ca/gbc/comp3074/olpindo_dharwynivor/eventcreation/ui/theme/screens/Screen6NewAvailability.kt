@@ -2,6 +2,7 @@ package ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.ui.theme.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -16,17 +17,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// Screen 6 - NEW / RSVP AVAILABILITY (UI prototype)
+data class AvailabilitySlot(val date: String, val timeRange: String)
+
 @Composable
 fun Screen6NewAvailability(
     modifier: Modifier = Modifier,
-    onSaveClicked: () -> Unit = {},
+    onSaveClicked: (title: String, slots: List<AvailabilitySlot>) -> Unit = { _, _ -> },
     onBackClicked: () -> Unit = {},
-    onImportClicked: () -> Unit = {} // Added parameter for your .ics import
+    onImportClicked: () -> Unit = {}
 ) {
     var title by remember { mutableStateOf("") }
+    var selectedDay by remember { mutableStateOf("24") } // Dynamic selected calendar day
     var fromTime by remember { mutableStateOf("00:00") }
     var toTime by remember { mutableStateOf("11:00") }
+
+    // Dynamic list of availability slots added by the user
+    val availabilityList = remember { mutableStateListOf<AvailabilitySlot>() }
 
     Column(
         modifier = modifier
@@ -56,19 +62,18 @@ fun Screen6NewAvailability(
             modifier = Modifier.fillMaxWidth()
         )
 
-        // MY AVAILABILITIES + IMPORT .ics
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("MY AVAILABILITIES", style = MaterialTheme.typography.bodyMedium)
-            OutlinedButton(onClick = onImportClicked) { // Hooked up here!
+            OutlinedButton(onClick = onImportClicked) {
                 Text("IMPORT .ics")
             }
         }
 
-        // Calendar (display only)
+        // Calendar (Tapping any day updates selectedDay)
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -94,15 +99,19 @@ fun Screen6NewAvailability(
                 calendarWeeks.forEach { week ->
                     Row(modifier = Modifier.fillMaxWidth()) {
                         week.forEach { day ->
+                            val isSelected = day == selectedDay && day.isNotEmpty()
                             Text(
-                                day,
+                                text = day,
                                 textAlign = TextAlign.Center,
                                 fontSize = 13.sp,
-                                color = if (day == "24") Color.White else Color.Black,
+                                color = if (isSelected) Color.White else Color.Black,
                                 modifier = Modifier
                                     .weight(1f)
                                     .padding(1.dp)
-                                    .background(if (day == "24") MaterialTheme.colorScheme.primary else Color.Transparent)
+                                    .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+                                    .clickable(enabled = day.isNotEmpty() && day.toIntOrNull() != null) {
+                                        selectedDay = day
+                                    }
                                     .padding(vertical = 8.dp)
                             )
                         }
@@ -111,27 +120,47 @@ fun Screen6NewAvailability(
             }
         }
 
-        // From / To / ADD
+        // From / To inputs + ADD button
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            OutlinedTextField(value = fromTime, onValueChange = { fromTime = it }, modifier = Modifier.weight(1f))
-            OutlinedTextField(value = toTime, onValueChange = { toTime = it }, modifier = Modifier.weight(1f))
-            OutlinedButton(onClick = { }) {
+            OutlinedTextField(
+                value = fromTime,
+                onValueChange = { fromTime = it },
+                modifier = Modifier.weight(1f),
+                label = { Text("From") }
+            )
+            OutlinedTextField(
+                value = toTime,
+                onValueChange = { toTime = it },
+                modifier = Modifier.weight(1f),
+                label = { Text("To") }
+            )
+            OutlinedButton(
+                onClick = {
+                    if (fromTime.isNotBlank() && toTime.isNotBlank()) {
+                        availabilityList.add(
+                            AvailabilitySlot(
+                                date = "OCTOBER $selectedDay",
+                                timeRange = "$fromTime - $toTime"
+                            )
+                        )
+                    }
+                }
+            ) {
                 Text("ADD")
             }
         }
 
-        // Added times (sample data from the wireframe)
-        Column {
-            Screen6Box("OCTOBER 23", Color(0xFFF3F3F3))
-            Screen6Box("15:00 - 22:00")
-        }
-        Column {
-            Screen6Box("OCTOBER 24", Color(0xFFF3F3F3))
-            Screen6Box("08:00 - 11:30")
-            Screen6Box("13:45 - 18:00")
+        // Dynamically preview added slots on Screen 6
+        availabilityList.groupBy { it.date }.forEach { (date, slots) ->
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Screen6Box(date, Color(0xFFF3F3F3))
+                slots.forEach { slot ->
+                    Screen6Box(slot.timeRange)
+                }
+            }
         }
 
         Row(
@@ -141,7 +170,23 @@ fun Screen6NewAvailability(
             Button(onClick = onBackClicked) {
                 Text("BACK")
             }
-            Button(onClick = onSaveClicked) {
+            Button(
+                onClick = {
+                    // If list is empty, automatically create a slot from current selected date & time inputs
+                    val finalSlots = if (availabilityList.isEmpty()) {
+                        listOf(
+                            AvailabilitySlot(
+                                date = "OCTOBER $selectedDay",
+                                timeRange = "$fromTime - $toTime"
+                            )
+                        )
+                    } else {
+                        availabilityList.toList()
+                    }
+
+                    onSaveClicked(title, finalSlots)
+                }
+            ) {
                 Text("SAVE / SUBMIT")
             }
         }
