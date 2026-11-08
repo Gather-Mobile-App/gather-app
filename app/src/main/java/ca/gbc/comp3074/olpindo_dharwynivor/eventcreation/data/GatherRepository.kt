@@ -106,25 +106,25 @@ object GatherRepository {
                 DateOption("2026-10-25", "13:00", "17:00"),
                 DateOption("2026-10-26", "09:00", "12:00")
             ),
-            invitees = listOf("sam@gather.app", "jordan@gather.app", "taylor@gather.app")
+            invitees = listOf("ivor@gather.app", "kiana@gather.app", "becky@gather.app")
         )
         events.add(demo)
 
-        submitRsvp(demo.id, 2, "Sam", listOf(
+        submitRsvp(demo.id, 2, "Ivor", listOf(
             TimeBlock("2026-10-24", "15:00", "22:00"),
             TimeBlock("2026-10-25", "14:00", "16:00")
         ))
-        submitRsvp(demo.id, 3, "Jordan", listOf(
+        submitRsvp(demo.id, 3, "Kiana", listOf(
             TimeBlock("2026-10-24", "08:00", "10:00"),
             TimeBlock("2026-10-24", "14:00", "23:59"),
             TimeBlock("2026-10-26", "09:00", "12:00")
         ))
-        submitRsvp(demo.id, 4, "Taylor", listOf(
+        submitRsvp(demo.id, 4, "Becky", listOf(
             TimeBlock("2026-10-24", "12:00", "12:30"),
             TimeBlock("2026-10-24", "15:00", "20:00"),
             TimeBlock("2026-10-25", "13:00", "17:00")
         ))
-        submitRsvp(demo.id, null, "Priya (guest)", listOf(
+        submitRsvp(demo.id, null, "Joshua (guest)", listOf(
             TimeBlock("2026-10-25", "15:00", "17:00"),
             TimeBlock("2026-10-26", "10:00", "11:30")
         ))
