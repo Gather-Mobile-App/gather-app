@@ -21,7 +21,8 @@ import androidx.compose.ui.unit.sp
 fun Screen6NewAvailability(
     modifier: Modifier = Modifier,
     onSaveClicked: () -> Unit = {},
-    onBackClicked: () -> Unit = {}
+    onBackClicked: () -> Unit = {},
+    onImportClicked: () -> Unit = {} // Added parameter for your .ics import
 ) {
     var title by remember { mutableStateOf("") }
     var fromTime by remember { mutableStateOf("00:00") }
@@ -62,7 +63,7 @@ fun Screen6NewAvailability(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("MY AVAILABILITIES", style = MaterialTheme.typography.bodyMedium)
-            OutlinedButton(onClick = { }) {
+            OutlinedButton(onClick = onImportClicked) { // Hooked up here!
                 Text("IMPORT .ics")
             }
         }
@@ -147,7 +148,6 @@ fun Screen6NewAvailability(
     }
 }
 
-// Grey-bordered box, e.g. "OCTOBER 23" or "15:00 - 22:00"
 @Composable
 fun Screen6Box(text: String, background: Color = Color.White) {
     Box(
