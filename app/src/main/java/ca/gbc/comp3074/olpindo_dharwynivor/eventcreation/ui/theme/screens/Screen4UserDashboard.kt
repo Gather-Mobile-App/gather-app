@@ -23,19 +23,24 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.clickable
+import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.data.GatherRepository
 
 //Annotation
 @Composable
 //Make function
-fun DashboardEventBox(name: String){
+fun DashboardEventBox(name: String, onClick: (() -> Unit)? = null){
 
-    //Text
+    //Text (tappable when onClick is given)
     Text(
         text = name,
         fontSize = 11.sp,
         lineHeight = 13.sp,
         maxLines = 2,
-        modifier = Modifier.width(105.dp).height(65.dp).border(1.dp, Color.Gray, RoundedCornerShape(8.dp)).padding(8.dp)
+        modifier = Modifier.width(105.dp).height(65.dp)
+            .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+            .padding(8.dp)
     )
 }
 
@@ -44,9 +49,10 @@ fun DashboardEventBox(name: String){
 @Composable
 //Make function
 fun Screen4UserDashboard(
-    //Make 2 Arrow functions
+    //Make 3 Arrow functions
     onAddEventClicked : () -> Unit = {},
-    onAvailabilityClicked : () -> Unit ={}
+    onAvailabilityClicked : () -> Unit ={},
+    onEventClicked : () -> Unit = {}
 )
 
 {
@@ -96,21 +102,26 @@ fun Screen4UserDashboard(
             //Spacer
             Spacer(modifier = Modifier.height(10.dp))
 
-            //Row Section - MEETING
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-
-                DashboardEventBox("MEETING 1")
-                DashboardEventBox("MEETING 2")
-                DashboardEventBox("MEETING 3")
-
+            //Rows Section - real events created by this user (3 per row)
+            //Tapping an event opens its availabilities (Screen 7)
+            val myEvents = GatherRepository.myCreatedEvents()
+            if (myEvents.isEmpty()) {
+                Text(text = "No events yet. Tap + ADD EVENT to create one.", fontSize = 12.sp, color = Color.Gray)
             }
-
-            //Spacer
-            Spacer(modifier = Modifier.height(10.dp))
+            myEvents.chunked(3).forEach { rowEvents ->
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    rowEvents.forEach { event ->
+                        DashboardEventBox("${event.title}\n${event.rsvpCode}") {
+                            GatherRepository.selectedEventId = event.id
+                            onEventClicked()
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+            }
 
             //Row Section - Add Event
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                DashboardEventBox("MEETING 4")
 
                 //Button Section
                 Button(onClick = onAddEventClicked) {

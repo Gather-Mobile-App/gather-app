@@ -81,7 +81,9 @@ class MainActivity : ComponentActivity() {
 
                         4 -> Screen4UserDashboard(
                             onAddEventClicked = { goTo(8) },
-                            onAvailabilityClicked = { goTo(5) }
+                            onAvailabilityClicked = { goTo(5) },
+                            onEventClicked = { goTo(7) }
+
                         )
 
                         5 -> Screen5UserAvailabilities(

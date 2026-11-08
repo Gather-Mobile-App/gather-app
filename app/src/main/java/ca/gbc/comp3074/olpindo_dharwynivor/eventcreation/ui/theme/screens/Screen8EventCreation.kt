@@ -17,9 +17,18 @@ import androidx.compose.ui.unit.sp
 import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.data.DateOption
 import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.data.GatherRepository
 import ca.gbc.comp3074.olpindo_dharwynivor.eventcreation.logic.TimeUtils
+import java.util.Calendar
 
-// One date option the organizer has added (day of October 2026 + times)
-private data class OptionSlot(val day: Int, val start: String, val end: String)
+// One date option the organizer has added (full date + times)
+private data class OptionSlot(val year: Int, val month: Int, val day: Int, val start: String, val end: String) {
+    // "2026-10-24" - the date format the rest of the app uses
+    val isoDate: String get() = "%04d-%02d-%02d".format(year, month, day)
+}
+
+private val MONTH_NAMES = listOf(
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+)
 
 // Screen 8 - EVENT CREATION (FR-01, FR-04)
 @Composable
@@ -34,8 +43,12 @@ fun Screen8EventCreation(
     var minAttendees by remember { mutableStateOf("2") }
     var maxAttendees by remember { mutableStateOf("") }
 
-    // Date & time inputs
+    // Month shown on the calendar (month is 1-12) and the day picked in it
+    var viewYear by remember { mutableIntStateOf(2026) }
+    var viewMonth by remember { mutableIntStateOf(10) }
     var selectedDay by remember { mutableIntStateOf(24) }
+
+    // Date & time inputs
     var startTimeInput by remember { mutableStateOf("18:00") }
     var endTimeInput by remember { mutableStateOf("22:00") }
 
@@ -103,7 +116,7 @@ fun Screen8EventCreation(
 
         Text("PICK DATE OPTIONS", style = MaterialTheme.typography.bodyMedium)
 
-        // Calendar - October 2026 (October 1 is a Thursday)
+        // Calendar - use < and > to change the month
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -115,7 +128,33 @@ fun Screen8EventCreation(
                     .padding(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("October 2026", style = MaterialTheme.typography.titleSmall)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            if (viewMonth == 1) { viewMonth = 12; viewYear-- } else viewMonth--
+                            selectedDay = 1
+                        },
+                        modifier = Modifier.size(36.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text("<", color = MaterialTheme.colorScheme.primary)
+                    }
+                    Text("${MONTH_NAMES[viewMonth - 1]} $viewYear", style = MaterialTheme.typography.titleSmall)
+                    OutlinedButton(
+                        onClick = {
+                            if (viewMonth == 12) { viewMonth = 1; viewYear++ } else viewMonth++
+                            selectedDay = 1
+                        },
+                        modifier = Modifier.size(36.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text(">", color = MaterialTheme.colorScheme.primary)
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -128,8 +167,14 @@ fun Screen8EventCreation(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
+                // Work out how many days this month has and which weekday it starts on
+                val cal = Calendar.getInstance().apply { set(viewYear, viewMonth - 1, 1) }
+                val daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+                val blanks = (cal.get(Calendar.DAY_OF_WEEK) + 5) % 7   // empty cells before day 1 (Monday first)
+
                 // 0 = empty cell
-                val cells = List(3) { 0 } + (1..31).toList() + List(1) { 0 }
+                val days = List(blanks) { 0 } + (1..daysInMonth).toList()
+                val cells = days + List((7 - days.size % 7) % 7) { 0 }
                 cells.chunked(7).forEach { week ->
                     Row(
                         modifier = Modifier
@@ -185,7 +230,7 @@ fun Screen8EventCreation(
                 onClick = {
                     val start = TimeUtils.toMinutes(startTimeInput)
                     val end = TimeUtils.toMinutes(endTimeInput)
-                    val slot = OptionSlot(selectedDay, startTimeInput.trim(), endTimeInput.trim())
+                    val slot = OptionSlot(viewYear, viewMonth, selectedDay, startTimeInput.trim(), endTimeInput.trim())
                     errorMessage = when {
                         start == null || end == null -> "Enter times like 18:00"
                         end <= start -> "End time must be after start time"
@@ -206,7 +251,7 @@ fun Screen8EventCreation(
         if (eventTimes.isEmpty()) {
             Text("No date options yet. Pick a day, enter times and tap ADD.", color = Color.Gray, fontSize = 13.sp)
         }
-        eventTimes.sortedWith(compareBy({ it.day }, { it.start })).forEach { slot ->
+        eventTimes.sortedWith(compareBy({ it.isoDate }, { it.start })).forEach { slot ->
             Card(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier
@@ -216,7 +261,7 @@ fun Screen8EventCreation(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("OCTOBER ${slot.day}", style = MaterialTheme.typography.labelMedium)
+                        Text("${TimeUtils.dateLabel(slot.isoDate)}, ${slot.year}", style = MaterialTheme.typography.labelMedium)
                         Text("${slot.start} - ${slot.end}", style = MaterialTheme.typography.bodyLarge)
                     }
                     TextButton(onClick = { eventTimes.remove(slot) }) {
@@ -289,7 +334,7 @@ fun Screen8EventCreation(
                         minAttendees = min,
                         maxAttendees = max,
                         dateOptions = eventTimes.map {
-                            DateOption("2026-10-%02d".format(it.day), it.start, it.end)
+                            DateOption(it.isoDate, it.start, it.end)
                         },
                         invitees = invitees.toList()
                     )
